@@ -44,7 +44,6 @@ TEMPLATE = '''
             color: var(--text-color);
             margin: 0;
             padding: 0;
-            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         header {
@@ -57,21 +56,15 @@ TEMPLATE = '''
         header img.logo {
             max-width: 135px;
             height: auto;
-            transition: opacity 0.3s ease;
-        }
-
-        header a:hover img.logo {
-            opacity: 0.85;
         }
 
         .theme-toggle {
             position: absolute;
             top: 10px;
             right: 15px;
-            cursor: pointer;
-            border: none;
             background: none;
-            padding: 0;
+            border: none;
+            cursor: pointer;
         }
 
         .theme-toggle img {
@@ -82,28 +75,24 @@ TEMPLATE = '''
         main {
             max-width: 800px;
             margin: 2rem auto;
-            padding: 2.5rem;
+            padding: 2rem;
             background: var(--card-bg);
             border-radius: 12px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
         }
 
         h2 {
             color: var(--text-color);
-            margin-top: 1.5rem;
         }
 
         form {
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
         }
 
-        input[type="text"],
-        input[type="file"] {
+        input[type="text"], input[type="file"] {
             width: 60%;
             padding: 0.6rem;
             border: 1px solid #ccc;
             border-radius: 6px;
-            font-size: 1rem;
         }
 
         button {
@@ -112,47 +101,23 @@ TEMPLATE = '''
             padding: 0.6rem 1.2rem;
             border: none;
             border-radius: 6px;
-            font-size: 1rem;
             cursor: pointer;
-            margin-right: 0.5rem;
-        }
-
-        button:hover {
-            background-color: var(--button-hover);
         }
 
         .share-buttons {
-            margin-top: 1rem;
-        }
-
-        .share-buttons a,
-        .share-buttons button {
-            margin-right: 10px;
-            margin-bottom: 10px;
-            text-decoration: none;
+            margin-top: 1.5rem;
         }
 
         .copy-success {
-            font-size: 0.9rem;
             color: green;
-            margin-top: 0.5rem;
-        }
-
-        .error {
-            color: red;
-            font-weight: 500;
-        }
-
-        .success {
-            color: #2e7d32;
-            font-weight: 500;
+            font-size: 0.9rem;
         }
 
         #map {
             width: 100%;
             height: 450px;
-            margin-top: 1.5rem;
             border-radius: 8px;
+            margin-top: 1rem;
         }
 
         footer {
@@ -160,35 +125,14 @@ TEMPLATE = '''
             color: white;
             text-align: center;
             padding: 1rem;
-            font-size: 0.9rem;
-            margin-top: 2rem;
-        }
-
-        @media screen and (max-width: 600px) {
-            input[type="text"],
-            input[type="file"] {
-                width: 100%;
-                margin-bottom: 1rem;
-            }
-
-            button {
-                width: 100%;
-                margin-bottom: 0.5rem;
-            }
-
-            .theme-toggle img {
-                height: 80px;
-            }
         }
     </style>
 </head>
 <body class="dark">
     <header>
-        <a href="/">
-            <img src="/static/axioma_logo.png" alt="AXIOMA Logo" class="logo">
-        </a>
+        <a href="/"><img src="/static/axioma_logo.png" alt="AXIOMA Logo" class="logo"></a>
         <button class="theme-toggle" onclick="toggleTheme()">
-            <img src="/static/darkmode-button.png" alt="Toggle theme">
+            <img src="/static/darkmode-button.png" alt="Toggle Theme">
         </button>
     </header>
     <main>
@@ -222,57 +166,40 @@ TEMPLATE = '''
 
         {% if lat and lon %}
             <div id="map"></div>
-
             <div class="share-buttons">
                 <h3>🔗 Share this location</h3>
                 <button onclick="copyLink()">Copy Link</button>
-                <a href="mailto:?subject=Shared Location&body=Check out this location: https://maps.google.com/?q={{ lat }},{{ lon }}" target="_blank">
-                    Share via Email
-                </a>
-                <a href="https://wa.me/?text=Check out this location: https://maps.google.com/?q={{ lat }},{{ lon }}" target="_blank">
-                    Share via WhatsApp
-                </a>
+                <a href="mailto:?subject=Shared Location&body=Check out this location: https://maps.google.com/?q={{ lat }},{{ lon }}" target="_blank">Email</a>
+                <a href="https://wa.me/?text=Check out this location: https://maps.google.com/?q={{ lat }},{{ lon }}" target="_blank">WhatsApp</a>
                 <div id="copySuccess" class="copy-success" style="display:none;">📍 Link copied!</div>
             </div>
-
             <script>
                 function initMap() {
                     const location = { lat: {{ lat }}, lng: {{ lon }} };
                     const map = new google.maps.Map(document.getElementById('map'), {
                         center: location,
-                        zoom: 10,
-                        mapTypeId: 'roadmap'
+                        zoom: 10
                     });
                     const marker = new google.maps.Marker({
                         position: location,
                         map: map,
                         animation: google.maps.Animation.DROP
                     });
-                    const contentString = `
-                        <div style="color: #000000; font-size: 14px; max-width: 240px;">
-                            {{ result | e }}
-                        </div>
-                    `;
-                    const infowindow = new google.maps.InfoWindow({
-                        content: contentString
-                    });
-                    marker.addListener("click", () => {
-                        infowindow.open(map, marker);
-                    });
-                    setTimeout(() => map.setZoom(16), 600);
+                    const contentString = `<div style="color:#000">{{ result | e }}</div>`;
+                    const infowindow = new google.maps.InfoWindow({ content: contentString });
+                    marker.addListener("click", () => infowindow.open(map, marker));
+                    setTimeout(() => map.setZoom(16), 500);
                 }
 
                 function copyLink() {
-                    const tempInput = document.createElement('input');
-                    tempInput.value = `https://maps.google.com/?q={{ lat }},{{ lon }}`;
-                    document.body.appendChild(tempInput);
-                    tempInput.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(tempInput);
-                    document.getElementById('copySuccess').style.display = 'block';
-                    setTimeout(() => {
-                        document.getElementById('copySuccess').style.display = 'none';
-                    }, 2000);
+                    const temp = document.createElement("input");
+                    temp.value = `https://maps.google.com/?q={{ lat }},{{ lon }}`;
+                    document.body.appendChild(temp);
+                    temp.select();
+                    document.execCommand("copy");
+                    document.body.removeChild(temp);
+                    document.getElementById("copySuccess").style.display = "block";
+                    setTimeout(() => document.getElementById("copySuccess").style.display = "none", 2000);
                 }
 
                 window.onload = function() {
@@ -294,17 +221,12 @@ TEMPLATE = '''
     </footer>
     <script>
         function toggleTheme() {
-            document.body.classList.toggle('dark');
-            localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+            document.body.classList.toggle("dark");
+            localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
         }
-
         function toggleThemeInit() {
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme === 'light') {
-                document.body.classList.remove('dark');
-            } else {
-                document.body.classList.add('dark');
-            }
+            const theme = localStorage.getItem("theme");
+            if (theme === "light") document.body.classList.remove("dark");
         }
     </script>
 </body>
@@ -401,4 +323,5 @@ def download():
 
 if __name__ == '__main__':
     os.makedirs('uploads', exist_ok=True)
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
