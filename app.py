@@ -18,16 +18,6 @@ TEMPLATE = '''
     <title>AXIOMA | Location Finder</title>
     <script src="https://maps.googleapis.com/maps/api/js?key={{ api_key }}"></script>
     <style>
-        :root {
-            --bg-color: #f5f7fa;
-            --text-color: #000000;
-            --header-bg: #003366;
-            --footer-bg: #003366;
-            --card-bg: #ffffff;
-            --button-bg: #0077b6;
-            --button-hover: #005b9e;
-        }
-
         body.dark {
             --bg-color: #1c1c1c;
             --text-color: #f5f5f5;
@@ -37,27 +27,22 @@ TEMPLATE = '''
             --button-bg: #4444aa;
             --button-hover: #333399;
         }
-
         body {
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
+            font-family: Arial, sans-serif;
+            background-color: var(--bg-color, #f5f5f5);
+            color: var(--text-color, #000);
             margin: 0;
             padding: 0;
         }
-
         header {
-            background-color: var(--header-bg);
+            background-color: var(--header-bg, #003366);
             padding: 1rem;
             text-align: center;
             position: relative;
         }
-
         header img.logo {
             max-width: 135px;
-            height: auto;
         }
-
         .theme-toggle {
             position: absolute;
             top: 10px;
@@ -66,62 +51,32 @@ TEMPLATE = '''
             border: none;
             cursor: pointer;
         }
-
         .theme-toggle img {
             height: 100px;
-            width: auto;
         }
-
         main {
             max-width: 800px;
             margin: 2rem auto;
             padding: 2rem;
-            background: var(--card-bg);
+            background: var(--card-bg, #ffffff);
             border-radius: 12px;
         }
-
-        h2 {
-            color: var(--text-color);
-        }
-
-        form {
-            margin-bottom: 1.5rem;
-        }
-
-        input[type="text"], input[type="file"] {
-            width: 60%;
+        input, button {
             padding: 0.6rem;
-            border: 1px solid #ccc;
+            margin: 0.3rem 0;
             border-radius: 6px;
         }
-
-        button {
-            background-color: var(--button-bg);
-            color: white;
-            padding: 0.6rem 1.2rem;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-
-        .share-buttons {
-            margin-top: 1.5rem;
-        }
-
-        .copy-success {
-            color: green;
-            font-size: 0.9rem;
-        }
-
         #map {
             width: 100%;
             height: 450px;
-            border-radius: 8px;
             margin-top: 1rem;
+            border-radius: 10px;
         }
-
+        .share-buttons button, .share-buttons a {
+            margin-right: 10px;
+        }
         footer {
-            background-color: var(--footer-bg);
+            background-color: var(--footer-bg, #003366);
             color: white;
             text-align: center;
             padding: 1rem;
@@ -130,7 +85,7 @@ TEMPLATE = '''
 </head>
 <body class="dark">
     <header>
-        <a href="/"><img src="/static/axioma_logo.png" alt="AXIOMA Logo" class="logo"></a>
+        <a href="/"><img src="/static/axioma_logo.png" class="logo" alt="AXIOMA Logo"></a>
         <button class="theme-toggle" onclick="toggleTheme()">
             <img src="/static/darkmode-button.png" alt="Toggle Theme">
         </button>
@@ -160,8 +115,6 @@ TEMPLATE = '''
             <form action="/download" method="get">
                 <button type="submit">Download Result as CSV</button>
             </form>
-        {% elif error %}
-            <p class="error">{{ error }}</p>
         {% endif %}
 
         {% if lat and lon %}
@@ -171,24 +124,41 @@ TEMPLATE = '''
                 <button onclick="copyLink()">Copy Link</button>
                 <a href="mailto:?subject=Shared Location&body=Check out this location: https://maps.google.com/?q={{ lat }},{{ lon }}" target="_blank">Email</a>
                 <a href="https://wa.me/?text=Check out this location: https://maps.google.com/?q={{ lat }},{{ lon }}" target="_blank">WhatsApp</a>
-                <div id="copySuccess" class="copy-success" style="display:none;">📍 Link copied!</div>
+                <div id="copySuccess" style="color: green; display: none;">📍 Link copied!</div>
             </div>
             <script>
                 function initMap() {
-                    const location = { lat: {{ lat }}, lng: {{ lon }} };
-                    const map = new google.maps.Map(document.getElementById('map'), {
-                        center: location,
-                        zoom: 10
+                    const target = { lat: {{ lat }}, lng: {{ lon }} };
+                    const map = new google.maps.Map(document.getElementById("map"), {
+                        center: { lat: 0, lng: 0 },
+                        zoom: 2,
+                        mapTypeId: "roadmap"
                     });
                     const marker = new google.maps.Marker({
-                        position: location,
+                        position: target,
                         map: map,
                         animation: google.maps.Animation.DROP
                     });
-                    const contentString = `<div style="color:#000">{{ result | e }}</div>`;
-                    const infowindow = new google.maps.InfoWindow({ content: contentString });
-                    marker.addListener("click", () => infowindow.open(map, marker));
-                    setTimeout(() => map.setZoom(16), 500);
+                    const infoWindow = new google.maps.InfoWindow({
+                        content: `<div style="color:#000">{{ result | e }}</div>`
+                    });
+                    marker.addListener("click", () => {
+                        infoWindow.open(map, marker);
+                    });
+
+                    // Smooth zoom-in and pan after delay
+                    setTimeout(() => {
+                        map.panTo(target);
+                        let zoomLevel = 2;
+                        const interval = setInterval(() => {
+                            if (zoomLevel < 16) {
+                                zoomLevel++;
+                                map.setZoom(zoomLevel);
+                            } else {
+                                clearInterval(interval);
+                            }
+                        }, 150);
+                    }, 1000);
                 }
 
                 function copyLink() {
@@ -199,7 +169,9 @@ TEMPLATE = '''
                     document.execCommand("copy");
                     document.body.removeChild(temp);
                     document.getElementById("copySuccess").style.display = "block";
-                    setTimeout(() => document.getElementById("copySuccess").style.display = "none", 2000);
+                    setTimeout(() => {
+                        document.getElementById("copySuccess").style.display = "none";
+                    }, 2000);
                 }
 
                 window.onload = function() {
@@ -208,11 +180,7 @@ TEMPLATE = '''
                 };
             </script>
         {% else %}
-            <script>
-                window.onload = function() {
-                    toggleThemeInit();
-                };
-            </script>
+            <script>window.onload = toggleThemeInit;</script>
         {% endif %}
     </main>
     <footer>
